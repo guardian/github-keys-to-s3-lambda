@@ -1,0 +1,89 @@
+//exports.handler contains the logic to be executed when the lambda function is run.
+
+var rp = require('request-promise');
+var Promise = require('promise');
+var AWS = require('aws-sdk');
+
+var GITHUB_BOTS = ['prout-bot', 'guardian-ci', 'gu-who-guardian', 'GuardianAndroid']
+
+function githubApiRequest(path) {
+  return rp({
+    uri: 'https://api.github.com' + path,
+    headers: {
+      'Authorization': 'token ' + process.env["GITHUB_OAUTH_TOKEN"],
+      'User-Agent': 'nodey'
+    },
+    json: true
+  }).catch(function(err) {
+    console.error(err);
+  });
+}
+
+function membersListToLogin(membersList) {
+  return membersList.map(function (member) {
+    return member.login;
+  })
+}
+
+function removeBots(usernameList) {
+  return usernameList.filter(function (name){ return GITHUB_BOTS.indexOf(name) < 0})
+}
+
+function usernameListToKeysList(usernameList) {
+  return Promise.all(usernameList.map(function (username) {
+    return githubApiRequest('/users/' + username + '/keys').then(function(keyResult) {
+      if (keyResult[0]) {
+        return keyResult[0].key;
+      } else {
+        console.log("No key for user " + username)
+        return "";
+      }
+    });
+  })).then(function(unl) {
+    return unl.join('\n');
+  });
+}
+
+function teamToTeamKeysObject(team) {
+  return {
+    teamName: team.name,
+    teamMembers: githubApiRequest('/teams/' + team.id + '/members')
+    .then(membersListToLogin)
+    .then(removeBots)
+    .then(usernameListToKeysList)
+  }
+}
+
+function postToS3(teamName, body) {
+  var s3 = new AWS.S3();
+  var key = teamName.replace(' ', '-') + '/authorized_keys'
+  var params = {Bucket: 'github-team-keys', Key: key, Body: body};
+
+  s3.putObject(params, function(err, data) {
+    if (err) {
+      console.error(err)
+    } else {
+      console.log("Successfully uploaded data to github-team-keys/" + key);
+    }
+  });
+}
+
+exports.handler = function (event, context) {
+  var teamList = githubApiRequest('/orgs/guardian/teams')
+  var teamsWithKeys = teamList.then(function(tl) {
+    return tl.map(teamToTeamKeysObject)
+  })
+
+  teamsWithKeys.then(function(twk) {
+    twk.map(function(team) {
+      team.teamMembers.then(function(members) {
+        postToS3(team.teamName, members)
+      });
+    });
+  });
+};
+
+// For testing locally
+if (process.env["KEYS_TO_S3_RUN_LOCAL"] === "true") {
+  exports.handler()
+}

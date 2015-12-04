@@ -1,0 +1,106 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Lambda function to copy team github keys to S3",
+  "Parameters": {
+    "S3Bucket": {
+      "Description": "S3 bucket to store the keys in",
+      "Type": "String",
+      "Default":"github-team-keys"
+    },
+    "AlarmSNS": {
+      "Description": "ARN for an SNS topic, used to send Cloudwatch alerts for things which require immediate action",
+      "Type": "String",
+      "Default": "arn:aws:sns:eu-west-1:743583969668:cloudwatch-alerts"
+    }
+  },
+  "Resources": {
+    "KeysToS3LambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version" : "2012-10-17",
+          "Statement": [ {
+            "Effect": "Allow",
+            "Principal": {
+              "Service": [ "lambda.amazonaws.com" ]
+            },
+            "Action": [ "sts:AssumeRole" ]
+            } ]
+          },
+          "Path": "/",
+          "Policies": [ {
+            "PolicyName": "KeysToS3LambdaPolicy",
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:PutObject"
+                  ],
+                  "Resource": [
+                    "arn:aws:s3:::github-team-keys/*"
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+            } ]
+          }
+        },
+        "KeysToS3Lambda": {
+          "Type" : "AWS::Lambda::Function",
+          "Properties" : {
+            "Code" : {
+              "S3Bucket" : "lambda-dist-cross-stream",
+              "S3Key" : { "Fn::Join": [ "/", [ "keys-to-s3", "keysToS3Lambda.zip" ] ]}
+            },
+            "Description" : "A lambda function to fetch publick keys for each team from github and store them in s3",
+            "Handler" : "index.handler",
+            "MemorySize" : 128,
+            "Role" : { "Fn::GetAtt" : [ "KeysToS3LambdaRole", "Arn" ] },
+            "Runtime" : "nodejs",
+            "Timeout" : 120
+          }
+        },
+        "KeysToS3LambdaErrorsAlarmAlert": {
+          "Type": "AWS::CloudWatch::Alarm",
+          "Properties": {
+            "AlarmName": "keys-to-s3-errors",
+            "AlarmDescription": "Alert on errors over retry limit",
+            "Namespace": "AWS/Lambda",
+            "Dimensions": [ { "Name": "FunctionName", "Value": { "Ref": "KeysToS3Lambda" } } ],
+            "MetricName": "Errors",
+            "Statistic": "Sum",
+            "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+            "Threshold": "1",
+            "Period": "1800",
+            "EvaluationPeriods": "10",
+            "AlarmActions": [{ "Ref": "AlarmSNS" }]
+          }
+        },
+        "KeysToS3LambdaInvocationAlarmAlert": {
+          "Type": "AWS::CloudWatch::Alarm",
+          "Properties": {
+            "AlarmName": "keys-to-s3-invocation",
+            "AlarmDescription": "Alert when function has not been invoked for a while",
+            "Namespace": "AWS/Lambda",
+            "Dimensions": [ { "Name": "FunctionName", "Value": { "Ref": "KeysToS3Lambda" } } ],
+            "MetricName": "Invocations",
+            "Statistic": "Sum",
+            "ComparisonOperator": "LessThanOrEqualToThreshold",
+            "Threshold": "2",
+            "Period": "1800",
+            "EvaluationPeriods": "3",
+            "InsufficientDataActions": [{ "Ref": "AlarmSNS" }]
+          }
+        }
+      }
+    }

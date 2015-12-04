@@ -1,0 +1,9 @@
+{
+    "name": "team-keys-to-s3",
+    "dependencies": {
+        "request-promise": "1.0.2",
+        "promise": "7.0.4",
+        "aws-sdk":"2.2.20"
+    },
+    "description": "A lambda function to copy github public keys to s3"
+}

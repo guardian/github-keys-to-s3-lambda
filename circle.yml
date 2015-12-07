@@ -15,6 +15,10 @@ deployment:
       - cp ../deploy.json .
       - zip -rv artifacts.zip packages/ deploy.json
 
+general:
+  artifacts:
+    - "target/artifacts.zip"
+
 test:
   post:
     - npm run riffraff-artefact

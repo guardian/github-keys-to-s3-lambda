@@ -6,6 +6,9 @@
         "aws-sdk":"2.2.20",
         "node-riffraff-artefact": "^1.3.2"
     },
+    "scripts": {
+      "riffraff-artefact": "./node_modules/.bin/riffraff-artefact"
+    },
     "repository" : {
       "type" : "git",
       "url" : "https://github.com/guardian/github-keys-to-s3-lambda"

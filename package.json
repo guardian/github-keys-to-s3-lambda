@@ -14,6 +14,5 @@
       "url" : "https://github.com/guardian/github-keys-to-s3-lambda"
     },
     "description": "A lambda function to copy github public keys to s3",
-    "cloudformation": "cloudformation/cfn.template",
-    "buildDir": "/Users/pmcmahon/git/github-keys-to-s3-lambda/"
+    "cloudformation": "cloudformation/cfn.template"
 }

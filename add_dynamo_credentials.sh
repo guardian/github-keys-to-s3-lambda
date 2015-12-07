@@ -1,5 +1,6 @@
 GITHUB_OAUTH_TOKEN=$(aws dynamodb query \
     --table-name lambda-configuration \
+    --region eu-west-1 \
     --key-conditions file://$PWD/lambda-config-query-key-conditions.json | \
     jq '.Items[0].GithubOAUTHToken.S')
 

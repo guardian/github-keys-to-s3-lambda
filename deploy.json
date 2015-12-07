@@ -1,0 +1,29 @@
+{
+  "defaultStacks": ["flexible"],
+  "packages": {
+    "cfn": {
+      "type": "cloud-formation",
+      "apps": ["github-keys-to-s3-lambda"],
+      "data": {
+        "cloudFormationStackName": "keys-to-s3",
+        "templateParameters": {
+          "AlarmSNS": "arn:aws:sns:eu-west-1:743583969668:cloudwatch-alerts",
+          "S3Bucket": "github-team-keys"
+        }
+      }
+    },
+    "lambda": {
+      "type": "aws-lambda",
+      "data": {
+        "functions": {
+          "PROD": {"name": "keys-to-s3-lambda-KeysToS3Lambda-G0ZI438XQRPX"}
+        }
+      }
+    }
+  },
+  "recipes": {
+    "default": {
+      "actions": [ "cfn.updateStack", "lambda.updateLambda" ]
+    }
+  }
+}

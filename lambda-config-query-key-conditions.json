@@ -1,0 +1,8 @@
+{
+    "propertyKey": {
+        "AttributeValueList": [
+            {"S": "keysToS3"}
+        ],
+        "ComparisonOperator": "EQ"
+    }
+}

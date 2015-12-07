@@ -1,0 +1,3 @@
+checkout:
+  post:
+    - ./add_dynamo_credentials.sh

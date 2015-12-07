@@ -1,3 +1,20 @@
 checkout:
   post:
     - ./add_dynamo_credentials.sh true
+
+deployment:
+  riffraff_upload:
+    branch: /.*/
+    commands:
+      - zip -r keysToS3.zip index.js package.json node_modules/
+      - mkdir -p target/packages/lambda
+      - mkdir -p target/packages/cfn/cloud-formation
+      - cd target/
+      - cp ../keysToS3.zip ./packages/lambda/lambda.zip
+      - cp ../cloudformation/cfn.template ./packages/cfn/cloud-formation/cfn.json
+      - cp ../deploy.json .
+      - zip -rv artifacts.zip packages/ deploy.json
+
+test:
+  post:
+    - npm run riffraff-artefact

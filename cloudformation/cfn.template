@@ -62,7 +62,7 @@
               "S3Bucket" : "lambda-dist-cross-stream",
               "S3Key" : { "Fn::Join": [ "/", [ "keys-to-s3", "keysToS3Lambda.zip" ] ]}
             },
-            "Description" : "A lambda function to fetch publick keys for each team from github and store them in s3",
+            "Description" : "A lambda function to fetch public keys for each team from github and store them in s3",
             "Handler" : "index.handler",
             "MemorySize" : 128,
             "Role" : { "Fn::GetAtt" : [ "KeysToS3LambdaRole", "Arn" ] },

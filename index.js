@@ -13,6 +13,9 @@ function githubApiRequest(path) {
       'Authorization': 'token ' + process.env["GITHUB_OAUTH_TOKEN"],
       'User-Agent': 'nodey'
     },
+    qs: {
+        per_page: 100
+    },
     json: true
   }).catch(function(err) {
     console.error(err);
@@ -33,7 +36,10 @@ function usernameListToKeysList(usernameList) {
   return Promise.all(usernameList.map(function (username) {
     return githubApiRequest('/users/' + username + '/keys').then(function(keyResult) {
       if (keyResult[0]) {
-        return keyResult[0].key;
+        var userKeys = keyResult.map(function(key) {
+          return key.key + ' ' + username;
+        }).join('\n');
+        return userKeys;
       } else {
         console.log("No key for user " + username)
         return "";

@@ -20,7 +20,7 @@ echo \
 '//////////////////////////////////////////////////////////////////////////////
 // "Environment Variables from '${0} script'"         //
 ////////////////////////////////////////////////////////////////////////////
-process.env["GITHUB_OAUTH_TOKEN"]='$GITHUB_OAUTH_TOKEN'\n' | cat - index.js > temp && mv temp index.js
+process.env["GITHUB_OAUTH_TOKEN"]='$GITHUB_OAUTH_TOKEN | cat - index.js > temp && mv temp index.js
 
 else
   echo 'Variables should not be injected locally to prevent accidental pushing to github. To inject variables, run '${0}' true'

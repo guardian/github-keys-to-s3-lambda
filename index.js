@@ -4,7 +4,7 @@ var rp = require('request-promise');
 var Promise = require('promise');
 var AWS = require('aws-sdk');
 
-var GITHUB_BOTS = ['prout-bot', 'guardian-ci', 'gu-who-guardian', 'GuardianAndroid']
+var GITHUB_BOTS = ['prout-bot', 'guardian-ci', 'gu-who-guardian', 'GuardianAndroid'];
 
 function githubApiRequest(path) {
   return rp({
@@ -41,7 +41,7 @@ function usernameListToKeysList(usernameList) {
         }).join('\n');
         return userKeys;
       } else {
-        console.log("No key for user " + username)
+        console.log("No key for user " + username);
         return "";
       }
     });
@@ -62,12 +62,12 @@ function teamToTeamKeysObject(team) {
 
 function postToS3(teamName, body) {
   var s3 = new AWS.S3();
-  var key = teamName.replace(' ', '-') + '/authorized_keys'
+  var key = teamName.replace(' ', '-') + '/authorized_keys';
   var params = {Bucket: 'github-team-keys', Key: key, Body: body};
 
   s3.putObject(params, function(err, data) {
     if (err) {
-      console.error(err)
+      console.error(err);
     } else {
       console.log("Successfully uploaded data to github-team-keys/" + key);
     }
@@ -75,21 +75,22 @@ function postToS3(teamName, body) {
 }
 
 exports.handler = function (event, context) {
-  var teamList = githubApiRequest('/orgs/guardian/teams')
+  var teamList = githubApiRequest('/orgs/guardian/teams');
   var teamsWithKeys = teamList.then(function(tl) {
-    return tl.map(teamToTeamKeysObject)
-  })
+    return tl.map(teamToTeamKeysObject);
+  });
 
   teamsWithKeys.then(function(twk) {
+    console.log("There are " + twk.length + " teams to post: " + twk.map(function(team){return team.teamName;}));
     twk.map(function(team) {
       team.teamMembers.then(function(members) {
-        postToS3(team.teamName, members)
+        postToS3(team.teamName, members);
       });
     });
-  });
+  })
 };
 
 // For testing locally
 if (process.env["KEYS_TO_S3_RUN_LOCAL"] === "true") {
-  exports.handler()
+  exports.handler();
 }

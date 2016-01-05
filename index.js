@@ -5,6 +5,7 @@ var Promise = require('promise');
 var AWS = require('aws-sdk');
 
 var GITHUB_BOTS = ['prout-bot', 'guardian-ci', 'gu-who-guardian', 'GuardianAndroid'];
+var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'SSHAccess']
 
 function githubApiRequest(path) {
   return rp({
@@ -74,8 +75,17 @@ function postToS3(teamName, body) {
   });
 }
 
+// remove teams from the bucket that aren't needed
+function filterTeamList(teamList) {
+  return teamList.filter(function(team) {
+    return TEAMS_TO_FETCH.filter(function(teamToFetchName) {
+      return teamToFetchName === team.name;
+    }).length == 1;
+  })
+}
+
 exports.handler = function (event, context) {
-  var teamList = githubApiRequest('/orgs/guardian/teams');
+  var teamList = githubApiRequest('/orgs/guardian/teams').then(filterTeamList);
   var teamsWithKeys = teamList.then(function(tl) {
     return tl.map(teamToTeamKeysObject);
   });

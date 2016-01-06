@@ -5,7 +5,7 @@ var Promise = require('promise');
 var AWS = require('aws-sdk');
 
 var GITHUB_BOTS = ['prout-bot', 'guardian-ci', 'gu-who-guardian', 'GuardianAndroid'];
-var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'SSHAccess']
+var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'Editorial Tools SSHAccess']
 
 function githubApiRequest(path) {
   return rp({
@@ -61,9 +61,13 @@ function teamToTeamKeysObject(team) {
   }
 }
 
+function cleanTeamName(name) {
+  return name.replace(/ /g, '-');
+}
+
 function postToS3(teamName, body) {
   var s3 = new AWS.S3();
-  var key = teamName.replace(' ', '-') + '/authorized_keys';
+  var key = cleanTeamName(teamName) + '/authorized_keys';
   var params = {Bucket: 'github-team-keys', Key: key, Body: body};
 
   s3.putObject(params, function(err, data) {
@@ -79,7 +83,7 @@ function postToS3(teamName, body) {
 function filterTeamList(teamList) {
   return teamList.filter(function(team) {
     return TEAMS_TO_FETCH.filter(function(teamToFetchName) {
-      return teamToFetchName === team.name;
+      return cleanTeamName(teamToFetchName) === cleanTeamName(team.name);
     }).length == 1;
   })
 }

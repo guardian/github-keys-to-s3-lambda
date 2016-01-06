@@ -5,7 +5,9 @@ var Promise = require('promise');
 var AWS = require('aws-sdk');
 
 var GITHUB_BOTS = ['prout-bot', 'guardian-ci', 'gu-who-guardian', 'GuardianAndroid'];
-var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'Editorial Tools SSHAccess', 'frontend']
+// add your github team name here to add your team's keys to the bucket
+// (see https://github.com/orgs/guardian/teams)
+var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'Editorial Tools SSHAccess', 'Guardian Frontend']
 
 function githubApiRequest(path) {
   return rp({

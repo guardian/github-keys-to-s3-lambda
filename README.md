@@ -9,12 +9,11 @@ Note that when looking at the lambda function in the AWS console you may see a
 context.succeed() at the end of the function. The function has probably completed
 successfully. This should be fixed at some point.
 
-To get access to the bucket containing the shared keys, you should submit a pull
-request for bucket-policy.json, with the aws account you need access for added as
-a principle for both the 'ListObject' and 'GetObject' permissions, then get Phil
-or someone from the tools team to update the policy on the github-team-keys bucket.
+To get access to the bucket containing the shared keys, you'll need someone from the
+tools team to change the bucket permissions. Phil can do it, just send him your
+AWS account id (which you can get from [prism](http://prism.gutools.co.uk/sources))
 
-You will also need to add your teams's name on github (see [here](https://github.com/orgs/guardian/teams)) to TEAMS_TO_FETCH in index.js to
+You will also need to add your team's name on github (see [here](https://github.com/orgs/guardian/teams)) to TEAMS_TO_FETCH in index.js to
 get the lambda to start fetching keys for your team.
 
 Deploying

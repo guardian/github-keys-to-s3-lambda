@@ -1,0 +1,24 @@
+{
+	"Version": "2012-10-17",
+	"Id": "Policy1452014962309",
+	"Statement": [
+		{
+			"Sid": "",
+			"Effect": "Allow",
+			"Principal": {
+				"AWS": ["arn:aws:iam::608572366721:root","arn:aws:iam::642631414762:root"]
+			},
+			"Action": "s3:ListBucket",
+			"Resource": "arn:aws:s3:::github-team-keys"
+		},
+		{
+			"Sid": "",
+			"Effect": "Allow",
+			"Principal": {
+				"AWS": ["arn:aws:iam::608572366721:root","arn:aws:iam::642631414762:root"]
+			},
+			"Action": "s3:GetObject",
+			"Resource": "arn:aws:s3:::github-team-keys/*"
+		}
+	]
+}

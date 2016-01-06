@@ -5,7 +5,7 @@ var Promise = require('promise');
 var AWS = require('aws-sdk');
 
 var GITHUB_BOTS = ['prout-bot', 'guardian-ci', 'gu-who-guardian', 'GuardianAndroid'];
-var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'Editorial Tools SSHAccess']
+var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'Editorial Tools SSHAccess', 'frontend']
 
 function githubApiRequest(path) {
   return rp({

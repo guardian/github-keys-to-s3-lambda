@@ -8,7 +8,7 @@ To get access to the bucket containing the shared keys, you'll need someone from
 tools team to change the bucket permissions. Phil can do it, just send him your
 AWS account id (which you can get from [prism](http://prism.gutools.co.uk/sources))
 
-You will also need to add your team's name on github (see [here](https://github.com/orgs/guardian/teams)) to TEAMS_TO_FETCH in
+You will also need to submit a pull request to add your team's name on github (see [here](https://github.com/orgs/guardian/teams)) to TEAMS_TO_FETCH in
 [index.js](https://github.com/guardian/github-keys-to-s3-lambda/blob/master/index.js)
 to get the lambda to start fetching keys for your team.
 

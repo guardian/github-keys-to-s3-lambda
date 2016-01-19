@@ -4,7 +4,6 @@ var rp = require('request-promise');
 var Promise = require('promise');
 var AWS = require('aws-sdk');
 
-var GITHUB_BOTS = ['prout-bot', 'guardian-ci', 'gu-who-guardian', 'GuardianAndroid'];
 // add your github team name here to add your team's keys to the bucket
 // (see https://github.com/orgs/guardian/teams)
 var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'Editorial Tools SSHAccess', 'Guardian Frontend', 'Discussion']
@@ -31,8 +30,16 @@ function membersListToLogin(membersList) {
   })
 }
 
-function removeBots(usernameList) {
-  return usernameList.filter(function (name){ return GITHUB_BOTS.indexOf(name) < 0})
+function getGithubBots() {
+  return githubApiRequest('/teams/748826/members').then(function (botsTeam) {
+    return botsTeam.map(function(member) {
+      return member.login;
+    });
+  });
+}
+
+function removeBots(usernameList, botList) {
+  return usernameList.filter(function (name){ return botList.indexOf(name) < 0})
 }
 
 function usernameListToKeysList(usernameList) {
@@ -53,12 +60,12 @@ function usernameListToKeysList(usernameList) {
   });
 }
 
-function teamToTeamKeysObject(team) {
+function teamToTeamKeysObject(team, botList) {
   return {
     teamName: team.name,
     teamMembers: githubApiRequest('/teams/' + team.id + '/members')
     .then(membersListToLogin)
-    .then(removeBots)
+    .then(function(logins) { return removeBots(logins, botList);})
     .then(usernameListToKeysList)
   }
 }
@@ -92,9 +99,12 @@ function filterTeamList(teamList) {
 
 exports.handler = function (event, context) {
   var teamList = githubApiRequest('/orgs/guardian/teams').then(filterTeamList);
+  var botList = getGithubBots();
   var teamsWithKeys = teamList.then(function(tl) {
-    return tl.map(teamToTeamKeysObject);
-  });
+    return botList.then(function(bl) {
+        return tl.map(function(t) { return teamToTeamKeysObject(t, bl);});
+      });
+    });
 
   teamsWithKeys.then(function(twk) {
     console.log("There are " + twk.length + " teams to post: " + twk.map(function(team){return team.teamName;}));

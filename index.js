@@ -6,7 +6,7 @@ var AWS = require('aws-sdk');
 
 // add your github team name here to add your team's keys to the bucket
 // (see https://github.com/orgs/guardian/teams)
-var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'Editorial Tools SSHAccess', 'Guardian Frontend', 'Discussion', 'Data Technology', 'Teamcity', 'Deploy Infrastructure', 'Membership and Subscriptions', 'Domains platform', 'Commercial dev', 'Content Platforms']
+var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'Editorial Tools SSHAccess', 'Guardian Frontend', 'Discussion', 'Data Technology', 'Teamcity', 'Deploy Infrastructure', 'Membership and Subscriptions', 'Domains platform', 'Commercial dev', 'Content Platforms'];
 
 function githubApiRequest(path, page) {
   return rp({
@@ -28,10 +28,8 @@ function githubApiRequest(path, page) {
 function pagedGithubApiRequest(path, page, teamList) {
     if (teamList) {
         return githubApiRequest(path, page).then(function(resp) {
-            if (resp.length === 0) {
-                return teamList;
-            }
-            return pagedGithubApiRequest(path, page+1, teamList.concat(resp));
+            if (resp.length === 0) return teamList;
+            else return pagedGithubApiRequest(path, page+1, teamList.concat(resp));
             })
     } else {
         return githubApiRequest(path, page).then(function(resp){
@@ -62,10 +60,9 @@ function usernameListToKeysList(usernameList) {
   return Promise.all(usernameList.map(function (username) {
     return githubApiRequest('/users/' + username + '/keys').then(function(keyResult) {
       if (keyResult[0]) {
-        var userKeys = keyResult.map(function(key) {
+        return keyResult.map(function(key) {
           return key.key + ' ' + username;
         }).join('\n');
-        return userKeys;
       } else {
         console.log("No key for user " + username);
         return "";

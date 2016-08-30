@@ -8,7 +8,7 @@ var AWS = require('aws-sdk');
 // (see https://github.com/orgs/guardian/teams)
 var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'Editorial Tools SSHAccess', 'Guardian Frontend', 'Discussion', 'Data Technology', 'Teamcity', 'Deploy Infrastructure', 'Membership and Subscriptions', 'Domains platform', 'Commercial dev', 'Content Platforms', 'Multimedia']
 
-function githubApiRequest(path) {
+function githubApiRequest(path, page) {
   return rp({
     uri: 'https://api.github.com' + path,
     headers: {
@@ -16,12 +16,26 @@ function githubApiRequest(path) {
       'User-Agent': 'nodey'
     },
     qs: {
-        per_page: 100
+        per_page: 100,
+        page: page
     },
     json: true
   }).catch(function(err) {
     console.error(err);
   });
+}
+
+function pagedGithubApiRequest(path, page, teamList) {
+    if (teamList) {
+        return githubApiRequest(path, page).then(function(resp) {
+            if (resp.length === 0) return teamList;
+            else return pagedGithubApiRequest(path, page+1, teamList.concat(resp));
+            })
+    } else {
+        return githubApiRequest(path, page).then(function(resp){
+            return pagedGithubApiRequest(path, page+1, resp)
+        })
+    }
 }
 
 function membersListToLogin(membersList) {
@@ -46,10 +60,9 @@ function usernameListToKeysList(usernameList) {
   return Promise.all(usernameList.map(function (username) {
     return githubApiRequest('/users/' + username + '/keys').then(function(keyResult) {
       if (keyResult[0]) {
-        var userKeys = keyResult.map(function(key) {
+        return keyResult.map(function(key) {
           return key.key + ' ' + username;
         }).join('\n');
-        return userKeys;
       } else {
         console.log("No key for user " + username);
         return "";
@@ -98,7 +111,7 @@ function filterTeamList(teamList) {
 }
 
 exports.handler = function (event, context) {
-  var teamList = githubApiRequest('/orgs/guardian/teams').then(filterTeamList);
+  var teamList = pagedGithubApiRequest('/orgs/guardian/teams', 1, null).then(filterTeamList);
   var botList = getGithubBots();
   var teamsWithKeys = teamList.then(function(tl) {
     return botList.then(function(bl) {

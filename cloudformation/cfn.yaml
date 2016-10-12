@@ -1,0 +1,116 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Lambda function to copy team github keys to S3
+Parameters:
+  FunctionName:
+    Type: String
+  TargetBucket:
+    Description: S3 bucket to store the keys in
+    Type: String
+    Default: github-team-keys
+  LambdaSourceBucket:
+    Description: S3 bucket to download the lambda code from
+    Type: String
+    Default: lambda-dist-cross-stream
+  Stack:
+    Type: String
+  AlarmSNS:
+    Description: ARN for an SNS topic, used to send Cloudwatch alerts for things which
+      require immediate action
+    Type: String
+    Default: arn:aws:sns:eu-west-1:743583969668:cloudwatch-alerts
+Resources:
+  KeysToS3LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: KeysToS3LambdaPolicy
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:PutObject
+            Resource: !Sub arn:aws:s3:::${TargetBucket}/*
+          - Effect: Allow
+            Action:
+            - dynamodb:Scan
+            Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ConfigTable}
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource: "*"
+  KeysToS3Lambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref FunctionName
+      Code:
+        S3Bucket: !Ref LambdaSourceBucket
+        S3Key: !Sub ${Stack}/PROD/keys-to-S3/keysToS3Lambda.zip
+      Description: A lambda function to fetch public keys for each team from github
+        and store them in s3
+      Handler: index.handler
+      MemorySize: 128
+      Role: !GetAtt [KeysToS3LambdaRole, Arn]
+      Runtime: nodejs
+      Timeout: 120
+  ConfigTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: !Sub ${FunctionName}-config
+      AttributeDefinitions:
+        - AttributeName: key
+          AttributeType: S
+      KeySchema:
+        - AttributeName: key
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+  KeysToS3LambdaErrorsAlarmAlert:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: keys-to-s3-errors
+      AlarmDescription: Alert on errors over retry limit
+      Namespace: AWS/Lambda
+      Dimensions:
+      - Name: FunctionName
+        Value:
+          Ref: KeysToS3Lambda
+      MetricName: Errors
+      Statistic: Sum
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Threshold: '1'
+      Period: '1800'
+      EvaluationPeriods: '10'
+      AlarmActions:
+      - Ref: AlarmSNS
+  KeysToS3LambdaInvocationAlarmAlert:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: keys-to-s3-invocation
+      AlarmDescription: Alert when function has not been invoked for a while
+      Namespace: AWS/Lambda
+      Dimensions:
+      - Name: FunctionName
+        Value:
+          Ref: KeysToS3Lambda
+      MetricName: Invocations
+      Statistic: Sum
+      ComparisonOperator: LessThanOrEqualToThreshold
+      Threshold: '2'
+      Period: '1800'
+      EvaluationPeriods: '3'
+      InsufficientDataActions:
+      - Ref: AlarmSNS

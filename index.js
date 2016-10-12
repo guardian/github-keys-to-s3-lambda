@@ -6,7 +6,10 @@ var AWS = require('aws-sdk');
 
 // add your github team name here to add your team's keys to the bucket
 // (see https://github.com/orgs/guardian/teams)
-var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'Editorial Tools SSHAccess', 'Guardian Frontend', 'Discussion', 'Data Technology', 'Teamcity', 'Deploy Infrastructure', 'Membership and Subscriptions', 'Domains platform', 'Commercial dev', 'Content Platforms', 'Multimedia']
+var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'Editorial Tools SSHAccess',
+                      'Guardian Frontend', 'Discussion', 'Data Technology', 'Teamcity',
+                      'Deploy Infrastructure', 'Membership and Subscriptions', 'Domains platform',
+                      'Commercial dev', 'Content Platforms', 'Multimedia', 'digital-department-website']
 
 function githubApiRequest(path, page) {
   return rp({

@@ -1,4 +1,4 @@
-# machine:
+machine:
   environment:
     ARTEFACT_PATH: ${HOME}/${CIRCLE_PROJECT_REPONAME}
 

@@ -1,10 +1,6 @@
-machine:
+# machine:
   environment:
     ARTEFACT_PATH: ${HOME}/${CIRCLE_PROJECT_REPONAME}
-
-checkout:
-  post:
-    - ./add_dynamo_credentials.sh true
 
 general:
   artifacts:

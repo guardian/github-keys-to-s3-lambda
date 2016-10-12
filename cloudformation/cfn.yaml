@@ -7,18 +7,15 @@ Parameters:
   TargetBucket:
     Description: S3 bucket to store the keys in
     Type: String
-    Default: github-team-keys
   LambdaSourceBucket:
     Description: S3 bucket to download the lambda code from
     Type: String
-    Default: lambda-dist-cross-stream
   Stack:
     Type: String
   AlarmSNS:
     Description: ARN for an SNS topic, used to send Cloudwatch alerts for things which
       require immediate action
     Type: String
-    Default: arn:aws:sns:eu-west-1:743583969668:cloudwatch-alerts
 Resources:
   KeysToS3LambdaRole:
     Type: AWS::IAM::Role

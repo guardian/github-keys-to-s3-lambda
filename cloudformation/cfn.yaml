@@ -12,10 +12,6 @@ Parameters:
     Type: String
   Stack:
     Type: String
-  AlarmSNS:
-    Description: ARN for an SNS topic, used to send Cloudwatch alerts for things which
-      require immediate action
-    Type: String
 Resources:
   KeysToS3LambdaRole:
     Type: AWS::IAM::Role
@@ -60,7 +56,7 @@ Resources:
       Handler: index.handler
       MemorySize: 128
       Role: !GetAtt [KeysToS3LambdaRole, Arn]
-      Runtime: nodejs
+      Runtime: nodejs4.3
       Timeout: 120
   ConfigTable:
     Type: AWS::DynamoDB::Table
@@ -89,6 +85,10 @@ Resources:
       SourceArn: !GetAtt [TriggerRule, Arn]
       Action: lambda:InvokeFunction
       Principal: events.amazonaws.com
+  AlarmSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub ${FunctionName}-alarm
   KeysToS3LambdaErrorsAlarmAlert:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -106,7 +106,7 @@ Resources:
       Period: '1800'
       EvaluationPeriods: '10'
       AlarmActions:
-      - Ref: AlarmSNS
+      - !Ref AlarmSNSTopic
   KeysToS3LambdaInvocationAlarmAlert:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -124,4 +124,4 @@ Resources:
       Period: '1800'
       EvaluationPeriods: '3'
       InsufficientDataActions:
-      - Ref: AlarmSNS
+      - !Ref AlarmSNSTopic

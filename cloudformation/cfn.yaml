@@ -92,7 +92,7 @@ Resources:
   KeysToS3LambdaErrorsAlarmAlert:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: keys-to-s3-errors
+      AlarmName: !Sub ${FunctionName}-errors
       AlarmDescription: Alert on errors over retry limit
       Namespace: AWS/Lambda
       Dimensions:
@@ -110,7 +110,7 @@ Resources:
   KeysToS3LambdaInvocationAlarmAlert:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: keys-to-s3-invocation
+      AlarmName: !Sub ${FunctionName}-invocation
       AlarmDescription: Alert when function has not been invoked for a while
       Namespace: AWS/Lambda
       Dimensions:

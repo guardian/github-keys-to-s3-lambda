@@ -1,0 +1,127 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Lambda function to copy team github keys to S3
+Parameters:
+  FunctionName:
+    Type: String
+  TargetBucket:
+    Description: S3 bucket to store the keys in
+    Type: String
+  LambdaSourceBucket:
+    Description: S3 bucket to download the lambda code from
+    Type: String
+  Stack:
+    Type: String
+Resources:
+  KeysToS3LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: KeysToS3LambdaPolicy
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:PutObject
+            Resource: !Sub arn:aws:s3:::${TargetBucket}/*
+          - Effect: Allow
+            Action:
+            - dynamodb:Scan
+            Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ConfigTable}
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource: "*"
+  KeysToS3Lambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref FunctionName
+      Code:
+        S3Bucket: !Ref LambdaSourceBucket
+        S3Key: !Sub ${Stack}/PROD/keys-to-S3/keysToS3Lambda.zip
+      Description: A lambda function to fetch public keys for each team from github
+        and store them in s3
+      Handler: index.handler
+      MemorySize: 128
+      Role: !GetAtt [KeysToS3LambdaRole, Arn]
+      Runtime: nodejs4.3
+      Timeout: 120
+  ConfigTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${FunctionName}-config
+      AttributeDefinitions:
+        - AttributeName: key
+          AttributeType: S
+      KeySchema:
+        - AttributeName: key
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+  TriggerRule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: rate(15 minutes)
+      Targets:
+        - Id: KeysToS3Scheduler
+          Arn: !GetAtt [KeysToS3Lambda, Arn]
+  TriggerInvokeLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt [KeysToS3Lambda, Arn]
+      SourceArn: !GetAtt [TriggerRule, Arn]
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+  AlarmSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub ${FunctionName}-alarm
+  KeysToS3LambdaErrorsAlarmAlert:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${FunctionName}-errors
+      AlarmDescription: Alert on errors over retry limit
+      Namespace: AWS/Lambda
+      Dimensions:
+      - Name: FunctionName
+        Value:
+          Ref: KeysToS3Lambda
+      MetricName: Errors
+      Statistic: Sum
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Threshold: '1'
+      Period: '1800'
+      EvaluationPeriods: '10'
+      AlarmActions:
+      - !Ref AlarmSNSTopic
+  KeysToS3LambdaInvocationAlarmAlert:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${FunctionName}-invocation
+      AlarmDescription: Alert when function has not been invoked for a while
+      Namespace: AWS/Lambda
+      Dimensions:
+      - Name: FunctionName
+        Value:
+          Ref: KeysToS3Lambda
+      MetricName: Invocations
+      Statistic: Sum
+      ComparisonOperator: LessThanOrEqualToThreshold
+      Threshold: '2'
+      Period: '1800'
+      EvaluationPeriods: '3'
+      InsufficientDataActions:
+      - !Ref AlarmSNSTopic

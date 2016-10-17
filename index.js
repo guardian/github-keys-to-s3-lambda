@@ -4,6 +4,12 @@ var rp = require('request-promise');
 var Promise = require('promise');
 var AWS = require('aws-sdk');
 
+AWS.config.update({
+  region: "eu-west-1"
+});
+
+var dynamoClient = new AWS.DynamoDB.DocumentClient()
+
 // add your github team name here to add your team's keys to the bucket
 // (see https://github.com/orgs/guardian/teams)
 var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'Editorial Tools SSHAccess',
@@ -11,11 +17,30 @@ var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'Editorial Tools SS
                       'Deploy Infrastructure', 'Membership and Subscriptions', 'Domains platform',
                       'Commercial dev', 'Content Platforms', 'Multimedia', 'digital-department-website']
 
-function githubApiRequest(path, page) {
+function configFromDynamo(functionName) {
+  var params = {
+    TableName: functionName + "-config"
+  }
+  return new Promise(function (fulfill, reject) {
+    dynamoClient.scan(params, function(err, data) {
+      if (err) reject(err)
+      else fulfill(data);
+    });
+  }).then(function (res) {
+    console.log(res.Items);
+    var config = {};
+    res.Items.forEach(function(row) {
+      config[row.key] = row.value
+    });
+    return config;
+  });
+}
+
+function githubApiRequest(path, githubOAuthToken, page) {
   return rp({
     uri: 'https://api.github.com' + path,
     headers: {
-      'Authorization': 'token ' + process.env["GITHUB_OAUTH_TOKEN"],
+      'Authorization': 'token ' + githubOAuthToken,
       'User-Agent': 'nodey'
     },
     qs: {
@@ -28,15 +53,15 @@ function githubApiRequest(path, page) {
   });
 }
 
-function pagedGithubApiRequest(path, page, teamList) {
+function pagedGithubApiRequest(path, githubOAuthToken, page, teamList) {
     if (teamList) {
-        return githubApiRequest(path, page).then(function(resp) {
+        return githubApiRequest(path, githubOAuthToken, page).then(function(resp) {
             if (resp.length === 0) return teamList;
-            else return pagedGithubApiRequest(path, page+1, teamList.concat(resp));
+            else return pagedGithubApiRequest(path, githubOAuthToken, page+1, teamList.concat(resp));
             })
     } else {
-        return githubApiRequest(path, page).then(function(resp){
-            return pagedGithubApiRequest(path, page+1, resp)
+        return githubApiRequest(path, githubOAuthToken, page).then(function(resp){
+            return pagedGithubApiRequest(path, githubOAuthToken, page+1, resp)
         })
     }
 }
@@ -47,8 +72,8 @@ function membersListToLogin(membersList) {
   })
 }
 
-function getGithubBots() {
-  return githubApiRequest('/teams/748826/members').then(function (botsTeam) {
+function getGithubBots(githubOAuthToken) {
+  return githubApiRequest('/teams/748826/members', githubOAuthToken).then(function (botsTeam) {
     return botsTeam.map(function(member) {
       return member.login;
     });
@@ -59,9 +84,9 @@ function removeBots(usernameList, botList) {
   return usernameList.filter(function (name){ return botList.indexOf(name) < 0})
 }
 
-function usernameListToKeysList(usernameList) {
+function usernameListToKeysList(usernameList, githubOAuthToken) {
   return Promise.all(usernameList.map(function (username) {
-    return githubApiRequest('/users/' + username + '/keys').then(function(keyResult) {
+    return githubApiRequest('/users/' + username + '/keys', githubOAuthToken).then(function(keyResult) {
       if (keyResult[0]) {
         return keyResult.map(function(key) {
           return key.key + ' ' + username;
@@ -76,13 +101,13 @@ function usernameListToKeysList(usernameList) {
   });
 }
 
-function teamToTeamKeysObject(team, botList) {
+function teamToTeamKeysObject(team, botList, githubOAuthToken) {
   return {
     teamName: team.name,
-    teamMembers: githubApiRequest('/teams/' + team.id + '/members')
+    teamMembers: githubApiRequest('/teams/' + team.id + '/members', githubOAuthToken)
     .then(membersListToLogin)
     .then(function(logins) { return removeBots(logins, botList);})
-    .then(usernameListToKeysList)
+    .then(function(usernames) { return usernameListToKeysList(usernames, githubOAuthToken);})
   }
 }
 
@@ -90,10 +115,10 @@ function cleanTeamName(name) {
   return name.replace(/ /g, '-');
 }
 
-function postToS3(teamName, body) {
+function postToS3(bucket, teamName, body) {
   var s3 = new AWS.S3();
   var key = cleanTeamName(teamName) + '/authorized_keys';
-  var params = {Bucket: 'github-team-keys', Key: key, Body: body};
+  var params = {Bucket: bucket, Key: key, Body: body};
 
   s3.putObject(params, function(err, data) {
     if (err) {
@@ -114,22 +139,28 @@ function filterTeamList(teamList) {
 }
 
 exports.handler = function (event, context) {
-  var teamList = pagedGithubApiRequest('/orgs/guardian/teams', 1, null).then(filterTeamList);
-  var botList = getGithubBots();
-  var teamsWithKeys = teamList.then(function(tl) {
-    return botList.then(function(bl) {
-        return tl.map(function(t) { return teamToTeamKeysObject(t, bl);});
-      });
-    });
+  console.log('context:', context)
 
-  teamsWithKeys.then(function(twk) {
-    console.log("There are " + twk.length + " teams to post: " + twk.map(function(team){return team.teamName;}));
-    twk.map(function(team) {
-      team.teamMembers.then(function(members) {
-        postToS3(team.teamName, members);
+  var functionName = context.functionName;
+  var configPromise = configFromDynamo(functionName);
+
+  configPromise.then(function (config) {
+    var botList = getGithubBots(config.githubOAuthToken);
+    var teams = pagedGithubApiRequest('/orgs/guardian/teams', config.githubOAuthToken, 1, null).then(filterTeamList);
+  
+    Promise.all([botList, teams]).then(function(bAndT) {
+      var bl = bAndT[0];
+      var tl = bAndT[1];
+      return tl.map(function(t) { return teamToTeamKeysObject(t, bl, config.githubOAuthToken);});
+    }).then(function(twk) {
+      console.log("There are " + twk.length + " teams to post: " + twk.map(function(team){return team.teamName;}));
+      twk.map(function(team) {
+        team.teamMembers.then(function(members) {
+          postToS3(config.bucket, team.teamName, members);
+        });
       });
-    });
-  })
+    })
+  });
 };
 
 // For testing locally

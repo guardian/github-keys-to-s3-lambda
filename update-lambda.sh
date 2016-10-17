@@ -3,7 +3,6 @@
 set -e
 
 cp index.js index1.js
-./add_dynamo_credentials.sh true
 zip -r -q keysToS3Lambda.zip index.js node_modules/ package.json
 rm index.js
 mv index1.js index.js

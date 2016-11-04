@@ -15,7 +15,8 @@ var dynamoClient = new AWS.DynamoDB.DocumentClient()
 var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'Editorial Tools SSHAccess',
                       'Guardian Frontend', 'Discussion', 'Data Technology', 'Teamcity',
                       'Deploy Infrastructure', 'Membership and Subscriptions', 'Domains platform',
-                      'Commercial dev', 'Content Platforms', 'Multimedia', 'digital-department-website']
+                      'Commercial dev', 'Content Platforms', 'Multimedia', 'digital-department-website',
+                      'data science']
 
 function configFromDynamo(functionName) {
   var params = {

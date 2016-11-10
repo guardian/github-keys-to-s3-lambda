@@ -166,5 +166,5 @@ exports.handler = function (event, context) {
 
 // For testing locally
 if (process.env["KEYS_TO_S3_RUN_LOCAL"] === "true") {
-  exports.handler();
+  exports.handler(null, {functionName: 'github-keys-to-s3'});
 }

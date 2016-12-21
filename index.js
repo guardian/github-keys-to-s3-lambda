@@ -8,7 +8,7 @@ AWS.config.update({
   region: "eu-west-1"
 });
 
-var dynamoClient = new AWS.DynamoDB.DocumentClient()
+var dynamoClient = new AWS.DynamoDB.DocumentClient();
 
 // add your github team name here to add your team's keys to the bucket
 // (see https://github.com/orgs/guardian/teams)
@@ -16,12 +16,12 @@ var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'Editorial Tools SS
                       'Guardian Frontend', 'Discussion', 'Data Technology', 'Teamcity',
                       'Deploy Infrastructure', 'Membership and Subscriptions', 'Domains platform',
                       'Commercial dev', 'Content Platforms', 'Multimedia', 'digital-department-website',
-                      'data science']
+                      'data science', 'Mobile Server-Side Staff'];
 
 function configFromDynamo(functionName) {
   var params = {
     TableName: functionName + "-config"
-  }
+  };
   return new Promise(function (fulfill, reject) {
     dynamoClient.scan(params, function(err, data) {
       if (err) reject(err)

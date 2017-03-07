@@ -17,6 +17,8 @@ This lambda is designed to be used with the [ssh-keys role in amigo](https://ami
 
 Notes
 -----
+There is a legacy version of this lambda running in the composer AWS account, pusing to a bucket called github-team-keys in the same account. When everyone has switched over their setup to use the new bucket we can kill it. 
+
 When looking at the lambda function in the AWS console you may see a
 "Process exited before completing request" error - this is because we don't call
 context.succeed() at the end of the function. The function has probably completed

@@ -15,6 +15,13 @@ to get the lambda to start fetching keys for your team.
 
 This lambda is designed to be used with the [ssh-keys role in amigo](https://amigo.gutools.co.uk/roles#s3-ssh-keys).
 
+Deployment
+-----
+
+1. (Suggested) switch to the version of node used by the lambda (currently 4.3)
+2. `npm install`
+3. `./update-lambda.sh` (requires deploy tools account credentials)
+
 Notes
 -----
 There is a legacy version of this lambda running in the composer AWS account, pusing to a bucket called github-team-keys in the same account. When everyone has switched over their setup to use the new bucket we can kill it. 

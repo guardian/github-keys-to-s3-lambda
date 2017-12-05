@@ -16,7 +16,8 @@ var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'Editorial Tools SS
                       'Guardian Frontend', 'Discussion', 'Data Technology', 'Teamcity',
                       'Deploy Infrastructure', 'Membership and Subscriptions', 'Domains platform',
                       'Commercial dev', 'Content Platforms', 'Multimedia', 'digital-department-website',
-                      'data science', 'Mobile Server-Side Staff', 'Identity', 'Identity SSH Access'];
+                      'data science', 'Mobile Server-Side Staff', 'Identity', 'Identity SSH Access',
+                      "Guardian Frontend Team"];
 
 function configFromDynamo(functionName) {
   var params = {
@@ -148,7 +149,7 @@ exports.handler = function (event, context) {
   configPromise.then(function (config) {
     var botList = getGithubBots(config.githubOAuthToken);
     var teams = pagedGithubApiRequest('/orgs/guardian/teams', config.githubOAuthToken, 1, null).then(filterTeamList);
-  
+
     Promise.all([botList, teams]).then(function(bAndT) {
       var bl = bAndT[0];
       var tl = bAndT[1];

@@ -17,7 +17,7 @@ var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'Editorial Tools SS
                       'Deploy Infrastructure', 'Membership and Subscriptions', 'Domains platform',
                       'Commercial dev', 'Content Platforms', 'Multimedia', 'digital-department-website',
                       'data science', 'Mobile Server-Side Staff', 'Identity', 'Identity SSH Access',
-                      "Guardian Frontend Team"];
+                      "Guardian Frontend Team", 'Investigations SSH Access'];
 
 function configFromDynamo(functionName) {
   var params = {

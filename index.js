@@ -14,7 +14,7 @@ var dynamoClient = new AWS.DynamoDB.DocumentClient();
 // (see https://github.com/orgs/guardian/teams)
 var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'Editorial Tools SSHAccess',
                       'Guardian Frontend', 'Discussion', 'Data Technology', 'Teamcity',
-                      'Deploy Infrastructure', 'Membership and Subscriptions', 'Domains platform',
+                      'Deploy Infrastructure', 'Domains platform',
                       'Commercial dev', 'Content Platforms', 'Multimedia', 'digital-department-website',
                       'data science', 'Mobile Server-Side Staff', 'Identity', 'Identity SSH Access',
                       "Guardian Frontend Team", 'Investigations SSH Access', 'Reader Revenue'];

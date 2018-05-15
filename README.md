@@ -1,5 +1,8 @@
 github-keys-to-s3-lambda
 ========================
+
+**DEPRECATED**: Please use [ssm-scala](https://github.com/guardian/ssm-scala) for future deployments.
+
 Lambda function used to store public keys for each team member on S3 to be
 used for authentication when logging into AWS instances via SSH. Keys are
 fetched from github for teams listed in TEAMS_TO_FETCH in index.js.

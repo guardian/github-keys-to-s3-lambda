@@ -56,7 +56,7 @@ Resources:
       Handler: index.handler
       MemorySize: 128
       Role: !GetAtt [KeysToS3LambdaRole, Arn]
-      Runtime: nodejs4.3
+      Runtime: nodejs8.10
       Timeout: 120
   ConfigTable:
     Type: AWS::DynamoDB::Table

@@ -12,7 +12,7 @@ var dynamoClient = new AWS.DynamoDB.DocumentClient();
 
 // add your github team name here to add your team's keys to the bucket
 // (see https://github.com/orgs/guardian/teams)
-var TEAMS_TO_FETCH = ['Digital CMS', 'OpsManager-SSHAccess', 'Editorial Tools SSHAccess',
+var TEAMS_TO_FETCH = ['OpsManager-SSHAccess',
                       'Guardian Frontend', 'Discussion', 'Data Technology', 'Teamcity',
                       'Deploy Infrastructure', 'Domains platform',
                       'Commercial dev', 'Content Platforms', 'Multimedia', 'digital-department-website',

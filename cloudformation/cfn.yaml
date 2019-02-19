@@ -12,7 +12,31 @@ Parameters:
     Type: String
   Stack:
     Type: String
+  PrivateSubnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Private subnets of vpc
+  VPC:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC to deploy into
+  GithubToken:
+    Type: String
+    Description: Github API OAuth Token
+  BucketName:
+    Type: String
+    Description: Bucket to put the keys in
+
 Resources:
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for github lambda - allow access to github
+      VpcId: !Ref VPC
+      SecurityGroupEgress:
+        CidrIp: 0.0.0.0/0
+        IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+
   KeysToS3LambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -36,13 +60,15 @@ Resources:
             Resource: !Sub arn:aws:s3:::${TargetBucket}/*
           - Effect: Allow
             Action:
-            - dynamodb:Scan
-            Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ConfigTable}
-          - Effect: Allow
-            Action:
             - logs:CreateLogGroup
             - logs:CreateLogStream
             - logs:PutLogEvents
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - ec2:DescribeNetworkInterfaces
+              - ec2:CreateNetworkInterface
+              - ec2:DeleteNetworkInterface
             Resource: "*"
   KeysToS3Lambda:
     Type: AWS::Lambda::Function
@@ -53,24 +79,19 @@ Resources:
         S3Key: !Sub ${Stack}/PROD/keys-to-S3/keysToS3Lambda.zip
       Description: A lambda function to fetch public keys for each team from github
         and store them in s3
+      Environment:
+        Variables:
+          BUCKET: !Ref BucketName
+          GITHUB_TOKEN: !Ref GithubToken
       Handler: index.handler
       MemorySize: 128
       Role: !GetAtt [KeysToS3LambdaRole, Arn]
       Runtime: nodejs8.10
       Timeout: 120
-  ConfigTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: !Sub ${FunctionName}-config
-      AttributeDefinitions:
-        - AttributeName: key
-          AttributeType: S
-      KeySchema:
-        - AttributeName: key
-          KeyType: HASH
-      ProvisionedThroughput:
-        ReadCapacityUnits: 1
-        WriteCapacityUnits: 1
+      VpcConfig:
+        SubnetIds: !Ref PrivateSubnets
+        SecurityGroupIds:
+        - !Ref LambdaSecurityGroup
   TriggerRule:
     Type: AWS::Events::Rule
     Properties:

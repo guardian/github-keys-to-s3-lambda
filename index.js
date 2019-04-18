@@ -10,7 +10,7 @@ AWS.config.update({
 
 // add your github team name here to add your team's keys to the bucket
 // (see https://github.com/orgs/guardian/teams)
-var TEAMS_TO_FETCH = ['Discussion', 'Data Technology', 'Teamcity',
+var TEAMS_TO_FETCH = ['Data Technology', 'Teamcity',
                       'Deploy Infrastructure', 'Domains platform',
                       'Commercial dev', 'Multimedia', 'digital-department-website',
                       'data science', 'Investigations SSH Access', 'Reader Revenue'];

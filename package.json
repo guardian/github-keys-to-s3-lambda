@@ -1,18 +1,22 @@
 {
-    "name": "team-keys-to-s3",
-    "dependencies": {
-        "request-promise": "2.0.1",
-        "promise": "7.0.4",
-        "aws-sdk": "2.2.20",
-        "node-riffraff-artefact": "^1.3.2"
-    },
-    "scripts": {
-        "riffraff-artefact": "./node_modules/.bin/riffraff-artefact"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/guardian/github-keys-to-s3-lambda"
-    },
-    "description": "A lambda function to copy github public keys to s3",
-    "cloudformation": "cloudformation/cfn.yaml"
+  "name": "team-keys-to-s3",
+  "dependencies": {
+    "request-promise": "2.0.1",
+    "promise": "7.0.4",
+    "aws-sdk": "2.2.20",
+    "node-riffraff-artefact": "^1.3.2",
+    "snyk": "^1.316.1"
+  },
+  "scripts": {
+    "riffraff-artefact": "./node_modules/.bin/riffraff-artefact",
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/guardian/github-keys-to-s3-lambda"
+  },
+  "description": "A lambda function to copy github public keys to s3",
+  "cloudformation": "cloudformation/cfn.yaml",
+  "snyk": true
 }
